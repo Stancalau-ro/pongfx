@@ -55,7 +55,7 @@ public class ScreensConfig implements Observer{
 		root = new StackPane();
 		root.getStylesheets().add(Constants.STYLE_FILE);
 		root.getStyleClass().add("main-window");
-		stage.setTitle("SpringFX");
+		stage.setTitle("PongFX");
 		scene = new Scene(root, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
 		stage.setScene(scene);
 		stage.setResizable(false);

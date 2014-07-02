@@ -4,6 +4,7 @@ import java.text.DecimalFormat;
 import java.util.Observable;
 import java.util.Observer;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -13,12 +14,12 @@ import javafx.scene.layout.StackPane;
 import ro.stancalau.pong.engine.Engine;
 import ro.stancalau.pong.engine.Metrics;
 
-public class PlayGroundPresentation extends Presentation {
+public class PlayGroundPresentation extends Presentation implements Observer{
 
 	public PlayGroundPresentation(ScreensConfig config) {
 		super(config);
 	}
-	
+
 	Engine engine;
 
 	@FXML
@@ -29,20 +30,18 @@ public class PlayGroundPresentation extends Presentation {
 	Label fpsLabel, fpsLabelMin, fpsLabelMax;
 	@FXML
 	Button startButton;
-	
+
 	DecimalFormat df = new DecimalFormat("##.#");
-	
+
 	@FXML
 	public void onPressStart(ActionEvent event){
 		if (!engine.isRunning()){
 			start();
-			startButton.setText("stop");
 		}else {
 			stop();
-			startButton.setText("start");
 		}
 	}	
-	
+
 	@FXML
 	void initialize() {		
 		engine = new Engine(pane);		
@@ -54,14 +53,28 @@ public class PlayGroundPresentation extends Presentation {
 				fpsLabelMax.setText( df.format( ((Metrics)o).getMaxFps()));
 			}
 		});
+		engine.addObserver(this);
 	}
-	
+
 	private void start(){
 		new Thread(engine).start();
 	}
-	
+
 	private void stop(){
 		engine.stop();
+	}
+
+	@Override
+	public void update(Observable o, Object arg) {
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				if (engine.isRunning())
+					startButton.setText("stop");
+				else 
+					startButton.setText("start");
+			}
+		});		
 	}
 
 }

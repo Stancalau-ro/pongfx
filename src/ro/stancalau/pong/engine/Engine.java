@@ -2,6 +2,7 @@ package ro.stancalau.pong.engine;
 
 import java.awt.MouseInfo;
 import java.awt.Point;
+import java.util.Observable;
 
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -12,7 +13,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import ro.stancalau.pong.config.Constants;
 
-public class Engine implements Runnable {
+public class Engine extends Observable implements Runnable {
 
 	private Pane pane;
 	private Circle ball;
@@ -20,7 +21,8 @@ public class Engine implements Runnable {
 	private int radius = Constants.BALL_RADIUS;
 	private int framerate = Constants.FPS;
 	private boolean running = false;
-	
+
+
 	private double dX=1;
 	private double dY=1;
 	private double cX;
@@ -85,7 +87,7 @@ public class Engine implements Runnable {
 	
 	@Override
 	public void run() {
-		running = true;
+		setRunning(true);
 		
 		long lastRun = System.currentTimeMillis()+100;
 		long since = System.currentTimeMillis();
@@ -94,7 +96,7 @@ public class Engine implements Runnable {
 		cX = ball.getCenterX();
 		cY = ball.getCenterY();
 		
-		while (running){				
+		while (isRunning()){				
 			
 			since = System.currentTimeMillis()-lastRun;
 			double delta = speed/1000d*since;
@@ -115,7 +117,8 @@ public class Engine implements Runnable {
 			}
 			if (cY >= height-radius){		
 				double col = collisionTest();
-				if (Math.abs(col)>1) { running = false;
+				if (Math.abs(col)>1) { 
+					setRunning(false);
 					reset();
 				}else{
 					dX = col*3;
@@ -175,12 +178,19 @@ public class Engine implements Runnable {
 		pad.setX(padX);
 	}
 
+	public void setRunning(boolean running) {
+		if (running== this.running) return;
+		this.running = running;
+		setChanged();
+		notifyObservers();
+	}
+	
 	public boolean isRunning() {
 		return running;
 	}
 
 	public void stop(){
-		running = false;
+		setRunning(false);
 	}
 
 	public Metrics getMetrics() {
