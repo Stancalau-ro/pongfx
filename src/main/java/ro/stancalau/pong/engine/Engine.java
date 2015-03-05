@@ -128,10 +128,10 @@ public class Engine extends Observable implements Runnable {
 			
 			Point p = MouseInfo.getPointerInfo().getLocation();
 			
-			double newX = cX;
-			double newY = cY;
-			long lastRunFinal = lastRun;
-			int mouseDelta = p.x-mousePos.x;
+			final double newX = cX;
+			final double newY = cY;
+			final long lastRunFinal = lastRun;
+			final int mouseDelta = p.x-mousePos.x;
 			
 			Platform.runLater(new Runnable() {
 			      @Override public void run() {
