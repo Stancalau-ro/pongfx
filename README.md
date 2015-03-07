@@ -37,3 +37,6 @@ The recommended way to go would be just to use Java 8. If you are not sure about
 or
 
  >javac -version
+
+
+More information about this project can be found here: http://stancalau.ro/javafx-spring-pong-game/
