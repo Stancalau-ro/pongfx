@@ -1,9 +1,5 @@
 package ro.stancalau.pong.gui;
 
-import java.text.DecimalFormat;
-import java.util.Observable;
-import java.util.Observer;
-
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -12,69 +8,73 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import ro.stancalau.pong.engine.Engine;
-import ro.stancalau.pong.engine.Metrics;
+import ro.stancalau.pong.model.Metrics;
 
-public class PlayGroundPresentation extends Presentation implements Observer{
+import java.text.DecimalFormat;
+import java.util.Observable;
+import java.util.Observer;
 
-	public PlayGroundPresentation(ScreensConfig config) {
-		super(config);
-	}
+public class PlayGroundPresentation extends Presentation implements Observer {
 
-	Engine engine;
+    public PlayGroundPresentation(ScreensConfig config) {
+        super(config);
+    }
 
-	@FXML
-	StackPane root;
-	@FXML
-	Pane pane;
-	@FXML
-	Label fpsLabel, fpsLabelMin, fpsLabelMax;
-	@FXML
-	Button startButton;
+    Engine engine;
 
-	DecimalFormat df = new DecimalFormat("##.#");
+    @FXML
+    StackPane root;
+    @FXML
+    Pane pane;
+    @FXML
+    Label fpsLabel, fpsLabelMin, fpsLabelMax;
+    @FXML
+    Button startButton;
 
-	@FXML
-	public void onPressStart(ActionEvent event){
-		if (!engine.isRunning()){
-			start();
-		}else {
-			stop();
-		}
-	}	
+    DecimalFormat df = new DecimalFormat("##.#");
 
-	@FXML
-	void initialize() {		
-		engine = new Engine(pane);		
-		engine.getMetrics().addObserver(new Observer() {
-			@Override
-			public void update(Observable o, Object arg) {
-				fpsLabel.setText( df.format( ((Metrics)o).getFps()));
-				fpsLabelMin.setText( df.format( ((Metrics)o).getMinFps()));
-				fpsLabelMax.setText( df.format( ((Metrics)o).getMaxFps()));
-			}
-		});
-		engine.addObserver(this);
-	}
+    @FXML
+    public void onPressStart(ActionEvent event) {
+        if (engine.isRunning()) {
+            stop();
+        } else {
+            start();
+        }
+    }
 
-	private void start(){
-		new Thread(engine).start();
-	}
+    @FXML
+    void initialize() {
+        engine = new Engine(pane);
+        engine.getMetrics().addObserver(new Observer() {
+            @Override
+            public void update(Observable o, Object arg) {
+                Metrics metrics = (Metrics) o;
+                fpsLabel.setText(df.format(metrics.getFps()));
+                fpsLabelMin.setText(df.format(metrics.getMinFps()));
+                fpsLabelMax.setText(df.format(metrics.getMaxFps()));
+            }
+        });
+        engine.addObserver(this);
+    }
 
-	private void stop(){
-		engine.stop();
-	}
+    private void start() {
+        new Thread(engine).start();
+    }
 
-	@Override
-	public void update(Observable o, Object arg) {
-		Platform.runLater(new Runnable() {
-			@Override
-			public void run() {
-				if (engine.isRunning())
-					startButton.setText("stop");
-				else 
-					startButton.setText("start");
-			}
-		});		
-	}
+    private void stop() {
+        engine.stop();
+    }
 
+    @Override
+    public void update(Observable o, Object arg) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                if (engine.isRunning())
+                    startButton.setText("stop");
+                else
+                    startButton.setText("start");
+            }
+        });
+    }
 }

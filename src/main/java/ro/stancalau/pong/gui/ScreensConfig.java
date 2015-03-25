@@ -1,10 +1,5 @@
 package ro.stancalau.pong.gui;
 
-import java.net.URL;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.ResourceBundle;
-
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -14,107 +9,108 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
-
 import ro.stancalau.pong.config.Constants;
 import ro.stancalau.pong.model.LanguageModel;
 
+import java.net.URL;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.ResourceBundle;
+
 @Configuration
 @Lazy
-public class ScreensConfig implements Observer{
-	private static Logger logger = LogManager.getLogger(ScreensConfig.class);
-	
-	private Stage stage;
-	private Scene scene;
-	private LanguageModel lang;
-	private StackPane root;	
+public class ScreensConfig implements Observer {
+    private static final Logger logger = LogManager.getLogger(ScreensConfig.class);
 
-	public void setPrimaryStage(Stage primaryStage) {
-		this.stage = primaryStage;
-	}
+    private Stage stage;
+    private Scene scene;
+    private LanguageModel lang;
+    private StackPane root;
 
-	public void setLangModel(LanguageModel lang) {
-		if (this.lang!=null){
-			this.lang.deleteObserver(this);
-		}
-		lang.addObserver(this);
-		this.lang = lang;
-	}
+    public void setPrimaryStage(Stage primaryStage) {
+        this.stage = primaryStage;
+    }
 
-	public ResourceBundle getBundle() {
-		return lang.getBundle();
-	}
+    public void setLanguage(LanguageModel lang) {
+        if (this.lang != null) {
+            this.lang.deleteObserver(this);
+        }
+        lang.addObserver(this);
+        this.lang = lang;
+    }
 
-	public void showMainScreen() {
-		root = new StackPane();
-		root.getStylesheets().add(Constants.STYLE_FILE);
-		root.getStyleClass().add("main-window");
-		stage.setTitle("PongFX");
-		scene = new Scene(root, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
-		stage.setScene(scene);
-		stage.setResizable(false);
+    public ResourceBundle getBundle() {
+        return lang.getBundle();
+    }
 
-		stage.setOnHiding(new EventHandler<WindowEvent>() {
-			public void handle(WindowEvent event) {
-				System.exit(0); 
-			}
-		});
-		stage.show();
-	}
+    public void showMainScreen() {
+        root = new StackPane();
+        root.getStylesheets().add(Constants.STYLE_FILE);
+        root.getStyleClass().add("main-window");
+        stage.setTitle("PongFX");
+        scene = new Scene(root, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+        stage.setScene(scene);
+        stage.setResizable(false);
 
-	private void setNode(Node node) {
-		root.getChildren().setAll(node);
-	}
+        stage.setOnHiding(new EventHandler<WindowEvent>() {
+            public void handle(WindowEvent event) {
+                System.exit(0);
+            }
+        });
+        stage.show();
+    }
 
-	private void setNodeOnTop(Node node) {
-		root.getChildren().add(node);
-	}
+    private void setNode(Node node) {
+        root.getChildren().setAll(node);
+    }
 
-	public void removeNode(Node node) {
-		root.getChildren().remove(node);
-	}
+    private void setNodeOnTop(Node node) {
+        root.getChildren().add(node);
+    }
 
-	void loadPlayGround() {
-		Node playground = getNode(playGroundPresentation(), getClass().getResource("PlayGround.fxml"));
-		((Pane) playground).setPrefSize(Constants.PLAY_GROUND_WIDTH, Constants.PLAY_GROUND_HEIGHT);
-		((Pane) playground).setMaxSize(Constants.PLAY_GROUND_WIDTH, Constants.PLAY_GROUND_HEIGHT);
-		
-		setNode(playground);
-	}
+    public void removeNode(Node node) {
+        root.getChildren().remove(node);
+    }
 
-	@Bean
-	@Scope("prototype")
-	PlayGroundPresentation playGroundPresentation() {
-		return new PlayGroundPresentation(this);
-	}
+    void loadPlayGround() {
+        Node playground = getNode(getPlayGroundPresentation(), getClass().getResource("PlayGround.fxml"));
+        ((Pane) playground).setPrefSize(Constants.PLAY_GROUND_WIDTH, Constants.PLAY_GROUND_HEIGHT);
+        ((Pane) playground).setMaxSize(Constants.PLAY_GROUND_WIDTH, Constants.PLAY_GROUND_HEIGHT);
 
-	private Node getNode(final Presentation control, URL location) {
-		FXMLLoader loader = new FXMLLoader(location, lang.getBundle());
-		loader.setControllerFactory(new Callback<Class<?>, Object>() {
-			public Object call(Class<?> aClass) {
-				return control;
-			}
-		});
-				
-		try {
-			return (Node) loader.load();
-		} catch (Exception e) {
-			logger.error("Error casting node", e);
-			return null;
-		}
-	}
+        setNode(playground);
+    }
 
-	public Stage getStage() {
-		return stage;
-	}
+    @Bean
+    @Scope("prototype")
+    PlayGroundPresentation getPlayGroundPresentation() {
+        return new PlayGroundPresentation(this);
+    }
 
-	public void update(Observable o, Object arg) {	
-	}
+    private Node getNode(final Presentation control, URL location) {
+        FXMLLoader loader = new FXMLLoader(location, lang.getBundle());
+        loader.setControllerFactory(new Callback<Class<?>, Object>() {
+            public Object call(Class<?> aClass) {
+                return control;
+            }
+        });
 
+        try {
+            return (Node) loader.load();
+        } catch (Exception e) {
+            logger.error("Error casting node", e);
+            return null;
+        }
+    }
+
+    public Stage getStage() {
+        return stage;
+    }
+
+    public void update(Observable o, Object arg) {}
 }

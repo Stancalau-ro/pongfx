@@ -1,9 +1,5 @@
 package ro.stancalau.pong.engine;
 
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.util.Observable;
-
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -11,191 +7,147 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.RadialGradient;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ro.stancalau.pong.config.Constants;
+import ro.stancalau.pong.model.*;
+
+import java.util.Observable;
 
 public class Engine extends Observable implements Runnable {
 
-	private Pane pane;
-	private Circle ball;
-	private Rectangle pad;
-	private int radius = Constants.BALL_RADIUS;
-	private int framerate = Constants.FPS;
-	private boolean running = false;
+    private static Logger logger = LogManager.getLogger(Engine.class);
+    private static final double SECOND_IN_MILIS = 1000d;
+    private static final String GRADIENT_STRING = String.format("radial-gradient(center 50%% 50%%, radius 100%%, %s, %s)", Constants.BALL_COLOR_1, Constants.BALL_COLOR_2);
 
+    private Circle ball;
+    private Rectangle pad;
+    private int framerate = Constants.FPS;
+    private boolean running = false;
 
-	private double dX=1;
-	private double dY=1;
-	private double cX;
-	private double cY;
-	private double width;
-	private double height;
-	private double speed = 400; 
-	
-	private double padX;
-	
-	private Metrics metrics;
-	
-	public Engine(Pane pane){
-		this.pane = pane;
-		
-		createBall();
-		createPad();
-		
-		ChangeListener<Number> listener = new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> arg0,
-					Number arg1, Number arg2) {
-				resized();				
-			}
-		};
-		
-		pane.widthProperty().addListener(listener);		
-		pane.heightProperty().addListener(listener);
+    private double speed = Constants.SPEED;
 
-		resized();
+    private BallState ballState;
+    private MouseState mouseState;
+    private PadState padState;
+    private PlayGroundState playGroundState;
 
-		metrics = new Metrics();
-	}
-	
-	private void resized() {
-		width = pane.getWidth();
-		height = pane.getHeight();
-		pad.setY(height-pad.getHeight());
-	}
+    private Metrics metrics;
 
-	private void createBall() {
-		ball = new Circle();
-		ball.setCenterX(radius*2);
-		ball.setCenterY(radius*2);
-		ball.setRadius(radius);
-		
-		RadialGradient g = RadialGradient.valueOf("radial-gradient(center 50% 50%, radius 100%, "+Constants.BALL_COLOR_1+", "+Constants.BALL_COLOR_2+")");
-		ball.setFill(g);
-		
-		pane.getChildren().add(ball);
-	}
-	
-	private void createPad() {
-		pad = new Rectangle(Constants.PAD_WIDTH, Constants.PAD_HEIGHT);		
-		pad.setX(0);
-		
-		RadialGradient g = RadialGradient.valueOf("radial-gradient(center 50% 50%, radius 100%, "+Constants.BALL_COLOR_1+", "+Constants.BALL_COLOR_2+")");
-		pad.setFill(g);
-		
-		pane.getChildren().add(pad);
-	}
-	
-	@Override
-	public void run() {
-		setRunning(true);
-		
-		long lastRun = System.currentTimeMillis()+100;
-		long since = System.currentTimeMillis();
-		Point mousePos = MouseInfo.getPointerInfo().getLocation();
-		
-		cX = ball.getCenterX();
-		cY = ball.getCenterY();
-		
-		while (isRunning()){				
-			
-			since = System.currentTimeMillis()-lastRun;
-			double delta = speed/1000d*since;
-				
-			double alpha = delta / Math.sqrt(dX*dX+dY*dY);
-			
-			cX += alpha*dX;
-			cY += alpha*dY;				
-			
-			if (cX <= radius){
-				dX = Math.abs(dX);
-			}
-			if (cX >= width-radius){
-				dX = -Math.abs(dX);
-			}
-			if (cY <= radius){
-				dY = Math.abs(dY);
-			}
-			if (cY >= height-radius){		
-				double col = collisionTest();
-				if (Math.abs(col)>1) { 
-					setRunning(false);
-					reset();
-				}else{
-					dX = col*3;
-					dY = -Math.abs(dY);
-				}
-			}
-			
-			Point p = MouseInfo.getPointerInfo().getLocation();
-			
-			final double newX = cX;
-			final double newY = cY;
-			final long lastRunFinal = lastRun;
-			final int mouseDelta = p.x-mousePos.x;
-			
-			Platform.runLater(new Runnable() {
-			      @Override public void run() {
-			    	  ball.setCenterX(newX);
-					  ball.setCenterY(newY);    
-					  setPadPosition(mouseDelta);
-					  metrics.setFps(1/((double)System.currentTimeMillis()-lastRunFinal)*1000 );
-			      }
-			});
-			
-			lastRun = System.currentTimeMillis();
-			mousePos = p;
-			
-			try {
-				Thread.sleep((long) (1000d/(double)framerate));
-			} catch (InterruptedException e) {
-			}
-		}		
-	}
-	
-	private void reset() {
-		cX = ball.getRadius();
-		cY = ball.getRadius();
-		dX = 1;
-		dY = 1;
-	}
+    public Engine(Pane pane) {
+        playGroundState = new PlayGroundState(Constants.PLAY_GROUND_WIDTH, Constants.PLAY_GROUND_HEIGHT);
+        ballState = new BallState(Constants.BALL_RADIUS);
+        padState = new PadState(Constants.PAD_WIDTH, Constants.PAD_HEIGHT);
+        mouseState = new MouseState();
+        metrics = new Metrics();
 
-	/**
-	 * @return Percentage of hit point deviation from center. Perfect center hit returns 0.
-	 * Full right returns 1.
-	 * Full left returns -1. 
-	 * Also returns a value whose ABS is larger then 1 if the collision did not happen.
-	 */
-	private double collisionTest() {
-		int w = (int) pad.getWidth();
-		return (cX - (padX+w/2) )/ (w/2) ;
-	}
+        createBall(pane, ballState);
+        createPad(pane, padState);
 
-	private void setPadPosition(int delta) {
-		padX+=delta;
-		if (padX<0) padX=0;
-		if (padX>width-pad.getWidth()) padX=width-pad.getWidth();
-		
-		pad.setX(padX);
-	}
+        bindPaneSizeProperties(pane);
+    }
 
-	public void setRunning(boolean running) {
-		if (running== this.running) return;
-		this.running = running;
-		setChanged();
-		notifyObservers();
-	}
-	
-	public boolean isRunning() {
-		return running;
-	}
+    private void bindPaneSizeProperties(final Pane pane) {
+        ChangeListener<Number> listener = new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> arg0,
+                                Number arg1, Number arg2) {
+                updateSizes(pane);
+            }
+        };
 
-	public void stop(){
-		setRunning(false);
-	}
+        pane.widthProperty().addListener(listener);
+        pane.heightProperty().addListener(listener);
 
-	public Metrics getMetrics() {
-		return metrics;
-	}
+        updateSizes(pane);
+    }
 
+    private void updateSizes(Pane pane) {
+        playGroundState.setWidth(pane.getWidth());
+        playGroundState.setHeight(pane.getHeight());
+        pad.setY(playGroundState.getHeight() - pad.getHeight());
+    }
 
+    private void createBall(Pane pane, BallState state) {
+        ball = new Circle();
+        ball.setRadius(state.getRadius());
+
+        RadialGradient g = RadialGradient.valueOf(GRADIENT_STRING);
+        ball.setFill(g);
+
+        pane.getChildren().add(ball);
+        moveBall(0);
+    }
+
+    private void createPad(Pane pane, PadState state) {
+        pad = new Rectangle(state.getWidth(), state.getHeight());
+        pad.setX(0);
+        pad.setY(pane.getHeight() - state.getHeight());
+
+        RadialGradient g = RadialGradient.valueOf(GRADIENT_STRING);
+        pad.setFill(g);
+
+        pane.getChildren().add(pad);
+    }
+
+    @Override
+    public void run() {
+        setRunning(true);
+
+        long lastUpdateTime = System.currentTimeMillis() + 100;
+
+        while (isRunning()) {
+            double vector = getVector(lastUpdateTime);
+
+            try {
+                ballState.updatePositions(playGroundState, vector, padState, speed);
+                moveBall(lastUpdateTime);
+                lastUpdateTime = System.currentTimeMillis();
+                Thread.sleep((long) (SECOND_IN_MILIS / (double) framerate));
+            } catch (IllegalStateException e) {
+                stop();
+                ballState.reset();
+            } catch (InterruptedException e) {
+                logger.error("Could not sleep... maybe it's insomnia.", e);
+            }
+        }
+    }
+
+    private void moveBall(final long lastUpdateTime) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                ball.setCenterX(ballState.getXPosition());
+                ball.setCenterY(ballState.getYPosition());
+                padState.updatePosition(mouseState.getCurrentDeltaX(), playGroundState.getWidth());
+                pad.setX(padState.getX());
+                metrics.setFps(1 / ((double) System.currentTimeMillis() - lastUpdateTime) * SECOND_IN_MILIS);
+            }
+        });
+    }
+
+    private double getVector(long lastUpdateTime) {
+        long sinceLastPositionUpdate = System.currentTimeMillis() - lastUpdateTime;
+        double distance = speed / SECOND_IN_MILIS * sinceLastPositionUpdate;
+        return distance / Math.sqrt(Math.pow(ballState.getDeltaX(), 2) + Math.pow(ballState.getDeltaY(), 2)); // the distance is the hypotenuse but we need the cathetus
+    }
+
+    private void setRunning(boolean running) {
+        if (running == this.running) return;
+        this.running = running;
+        setChanged();
+        notifyObservers();
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
+    public void stop() {
+        setRunning(false);
+    }
+
+    public Metrics getMetrics() {
+        return metrics;
+    }
 }
