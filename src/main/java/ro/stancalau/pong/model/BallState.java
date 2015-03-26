@@ -1,39 +1,73 @@
 package ro.stancalau.pong.model;
 
+import ro.stancalau.pong.engine.IllegalBallPositionException;
+
 public class BallState {
 
+    public static final int DEFLECTING_SCALE = 3;
+
+    private PlayGroundState playGround;
+
+    private double radius;
     private double deltaX;
     private double deltaY;
     private double xPosition;
     private double yPosition;
-    private double radius;
 
-    public BallState(double radius) {
+    public BallState(PlayGroundState playGround, double radius) {
+        this.playGround = playGround;
         this.radius = radius;
         reset();
     }
 
-    public void updatePositions(PlayGroundState playGround, double vector, PadState padState, double speed) throws IllegalStateException {
+    public void updatePositions(PadState padState, double vector) throws IllegalBallPositionException {
         xPosition += vector * deltaX;
         yPosition += vector * deltaY;
 
-        if (xPosition <= radius) {
-            deltaX = Math.abs(deltaX);
-        }
-        if (xPosition >= playGround.getWidth() - radius) {
-            deltaX = -Math.abs(deltaX);
-        }
+        updateDeltaX(playGround);
+        updateDeltaY(playGround, padState);
+
+        normalizeXPosition(playGround.getWidth());
+        normalizeYPosition(playGround.getHeight());
+    }
+
+    private void updateDeltaY(PlayGroundState playGround, PadState padState) throws IllegalBallPositionException {
         if (yPosition <= radius) {
             deltaY = Math.abs(deltaY);
-        }
-        if (yPosition >= playGround.getHeight() - radius) {
-            double col = collisionTest(padState.getWidth(), padState.getX());
-            if (Math.abs(col) > 1) {
-                throw new IllegalStateException("Ball slipped below the floor.");
+        } else if (yPosition >= playGround.getHeight() - radius) {
+            double deflection = collisionTest(padState.getWidth(), padState.getX());
+            if (Math.abs(deflection) > 1) {
+                throw new IllegalBallPositionException("Ball slipped below the floor.");
             } else {
-                deltaX = col * 3;
+                deltaX = deflection * DEFLECTING_SCALE;
                 deltaY = -Math.abs(deltaY);
             }
+        }
+    }
+
+    private void normalizeXPosition(double width) {
+        xPosition = getNormalizedPosition(width, radius, xPosition);
+    }
+
+    private void normalizeYPosition(double height) throws IllegalBallPositionException {
+        yPosition = getNormalizedPosition(height, radius, yPosition);
+    }
+
+    private static double getNormalizedPosition(final double dimension, final double radius, final double position) {
+        if (position <= radius) {
+            return position + 2 * (radius - position);
+        } else if (position >= dimension - radius) {
+            return position - 2 * (position - (dimension - radius));
+        } else {
+            return position;
+        }
+    }
+
+    private void updateDeltaX(PlayGroundState playGround) {
+        if (xPosition <= radius) {
+            deltaX = Math.abs(deltaX);
+        } else if (xPosition >= playGround.getWidth() - radius) {
+            deltaX = -Math.abs(deltaX);
         }
     }
 

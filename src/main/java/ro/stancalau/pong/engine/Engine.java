@@ -13,19 +13,19 @@ import ro.stancalau.pong.config.Constants;
 import ro.stancalau.pong.model.*;
 
 import java.util.Observable;
+import java.util.Observer;
 
 public class Engine extends Observable implements Runnable {
 
-    private static Logger logger = LogManager.getLogger(Engine.class);
+    private static final Logger logger = LogManager.getLogger(Engine.class);
     private static final double SECOND_IN_MILIS = 1000d;
     private static final String GRADIENT_STRING = String.format("radial-gradient(center 50%% 50%%, radius 100%%, %s, %s)", Constants.BALL_COLOR_1, Constants.BALL_COLOR_2);
 
     private Circle ball;
     private Rectangle pad;
     private int framerate = Constants.FPS;
-    private boolean running = false;
-
     private double speed = Constants.SPEED;
+    private boolean running = false;
 
     private BallState ballState;
     private MouseState mouseState;
@@ -36,7 +36,7 @@ public class Engine extends Observable implements Runnable {
 
     public Engine(Pane pane) {
         playGroundState = new PlayGroundState(Constants.PLAY_GROUND_WIDTH, Constants.PLAY_GROUND_HEIGHT);
-        ballState = new BallState(Constants.BALL_RADIUS);
+        ballState = new BallState(playGroundState, Constants.BALL_RADIUS);
         padState = new PadState(Constants.PAD_WIDTH, Constants.PAD_HEIGHT);
         mouseState = new MouseState();
         metrics = new Metrics();
@@ -76,7 +76,7 @@ public class Engine extends Observable implements Runnable {
         ball.setFill(g);
 
         pane.getChildren().add(ball);
-        moveBall(0);
+        moveBall();
     }
 
     private void createPad(Pane pane, PadState state) {
@@ -93,43 +93,63 @@ public class Engine extends Observable implements Runnable {
     @Override
     public void run() {
         setRunning(true);
-
-        long lastUpdateTime = System.currentTimeMillis() + 100;
+        long lastUpdateTime = System.currentTimeMillis();
 
         while (isRunning()) {
             double vector = getVector(lastUpdateTime);
 
             try {
-                ballState.updatePositions(playGroundState, vector, padState, speed);
-                moveBall(lastUpdateTime);
+                ballState.updatePositions(padState, vector);
+                updateMetrics(lastUpdateTime);
                 lastUpdateTime = System.currentTimeMillis();
                 Thread.sleep((long) (SECOND_IN_MILIS / (double) framerate));
-            } catch (IllegalStateException e) {
+            } catch (IllegalBallPositionException e) {
                 stop();
                 ballState.reset();
             } catch (InterruptedException e) {
                 logger.error("Could not sleep... maybe it's insomnia.", e);
+            } finally {
+                moveBall();
+                movePad();
             }
         }
     }
 
-    private void moveBall(final long lastUpdateTime) {
+    private void updateMetrics(final long lastUpdateTime) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                final double fps = 1 / ((double) System.currentTimeMillis() - lastUpdateTime) * SECOND_IN_MILIS;
+                metrics.setFps(Math.min(framerate, fps)); // minimum because the first cycle tends to give off huge unrealistic values
+            }
+        });
+    }
+
+    private void moveBall() {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
                 ball.setCenterX(ballState.getXPosition());
                 ball.setCenterY(ballState.getYPosition());
+            }
+        });
+    }
+
+    private void movePad() {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
                 padState.updatePosition(mouseState.getCurrentDeltaX(), playGroundState.getWidth());
                 pad.setX(padState.getX());
-                metrics.setFps(1 / ((double) System.currentTimeMillis() - lastUpdateTime) * SECOND_IN_MILIS);
             }
         });
     }
 
     private double getVector(long lastUpdateTime) {
         long sinceLastPositionUpdate = System.currentTimeMillis() - lastUpdateTime;
-        double distance = speed / SECOND_IN_MILIS * sinceLastPositionUpdate;
-        return distance / Math.sqrt(Math.pow(ballState.getDeltaX(), 2) + Math.pow(ballState.getDeltaY(), 2)); // the distance is the hypotenuse but we need the cathetus
+        double hypotenuse = speed / SECOND_IN_MILIS * sinceLastPositionUpdate;
+        double cathetus = hypotenuse / Math.sqrt(Math.pow(ballState.getDeltaX(), 2) + Math.pow(ballState.getDeltaY(), 2));
+        return cathetus;
     }
 
     private void setRunning(boolean running) {
@@ -147,7 +167,7 @@ public class Engine extends Observable implements Runnable {
         setRunning(false);
     }
 
-    public Metrics getMetrics() {
-        return metrics;
+    public void addMetricsObserver(Observer observer) {
+        metrics.addObserver(observer);
     }
 }

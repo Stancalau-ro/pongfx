@@ -1,4 +1,4 @@
-package ro.stancalau.pong.model;
+package ro.stancalau.pong.engine;
 
 import java.util.Observable;
 
@@ -12,7 +12,7 @@ public class Metrics extends Observable {
         return fps;
     }
 
-    public void setFps(double fps) {
+    void setFps(double fps) {
         if (this.fps == fps || fps < 0 || fps == Double.POSITIVE_INFINITY) return;
         this.fps = fps;
 
@@ -30,4 +30,6 @@ public class Metrics extends Observable {
     public double getMaxFps() {
         return maxFps;
     }
+
+
 }

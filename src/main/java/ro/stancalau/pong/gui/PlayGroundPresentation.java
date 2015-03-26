@@ -8,7 +8,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import ro.stancalau.pong.engine.Engine;
-import ro.stancalau.pong.model.Metrics;
+import ro.stancalau.pong.engine.Metrics;
 
 import java.text.DecimalFormat;
 import java.util.Observable;
@@ -45,7 +45,7 @@ public class PlayGroundPresentation extends Presentation implements Observer {
     @FXML
     void initialize() {
         engine = new Engine(pane);
-        engine.getMetrics().addObserver(new Observer() {
+        final Observer metricsObserver = new Observer() {
             @Override
             public void update(Observable o, Object arg) {
                 Metrics metrics = (Metrics) o;
@@ -53,7 +53,8 @@ public class PlayGroundPresentation extends Presentation implements Observer {
                 fpsLabelMin.setText(df.format(metrics.getMinFps()));
                 fpsLabelMax.setText(df.format(metrics.getMaxFps()));
             }
-        });
+        };
+        engine.addMetricsObserver(metricsObserver);
         engine.addObserver(this);
     }
 
