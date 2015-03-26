@@ -13,7 +13,9 @@ public class Metrics extends Observable {
     }
 
     void setFps(double fps) {
-        if (this.fps == fps || fps < 0 || fps == Double.POSITIVE_INFINITY) return;
+        if (!isValidFps(fps)){
+            return;
+        }
         this.fps = fps;
 
         if (fps < minFps) minFps = fps;
@@ -23,6 +25,10 @@ public class Metrics extends Observable {
         notifyObservers();
     }
 
+    private boolean isValidFps(double fps) {
+        return (this.fps != fps) && (fps >= 0) && (fps != Double.POSITIVE_INFINITY);
+    }
+
     public double getMinFps() {
         return minFps;
     }
@@ -30,6 +36,4 @@ public class Metrics extends Observable {
     public double getMaxFps() {
         return maxFps;
     }
-
-
 }

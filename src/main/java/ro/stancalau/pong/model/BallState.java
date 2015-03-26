@@ -25,9 +25,9 @@ public class BallState {
         yPosition += vector * deltaY;
 
         updateDeltaX(playGround);
-        updateDeltaY(playGround, padState);
-
         normalizeXPosition(playGround.getWidth());
+
+        updateDeltaY(playGround, padState);
         normalizeYPosition(playGround.getHeight());
     }
 
