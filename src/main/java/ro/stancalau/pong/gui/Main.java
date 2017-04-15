@@ -14,7 +14,7 @@ import ro.stancalau.pong.model.LanguageModel;
 @Service
 public class Main extends Application {
 
-    private static Logger logger = LogManager.getLogger(Main.class);
+    private static final Logger logger = LogManager.getLogger(Main.class);
 
     public static void main(String[] args) {
         launch(args);

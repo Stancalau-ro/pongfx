@@ -5,14 +5,14 @@ import ro.stancalau.pong.model.LanguageModel.Language;
 
 public class LanguageController {
 
-    private LanguageModel model;
+    private final LanguageModel model;
 
     public LanguageController(LanguageModel model) {
         this.model = model;
         toEnglish();
     }
 
-    public void toEnglish() {
+    private void toEnglish() {
         model.setBundle(Language.EN);
     }
 

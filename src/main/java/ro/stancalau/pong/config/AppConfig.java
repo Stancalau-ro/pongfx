@@ -12,12 +12,12 @@ import ro.stancalau.pong.model.LanguageModel;
 public class AppConfig {
 
     @Bean
-    LanguageModel languageModel() {
+    public LanguageModel languageModel() {
         return new LanguageModel();
     }
 
     @Bean
-    LanguageController languageController() {
+    public LanguageController languageController() {
         return new LanguageController(languageModel());
     }
 }

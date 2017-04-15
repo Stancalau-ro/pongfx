@@ -18,7 +18,7 @@ public class LanguageModel extends Observable {
     }
 
     public void setBundle(Language lang) {
-        if (lang == null || lang.equals(this.bundle)) return;
+        if (lang == null) return;
         setLanguage(lang);
         bundle = ResourceBundle.getBundle("lang", new Locale(lang.getValue(), lang.toString()));
         setChanged();
@@ -37,9 +37,9 @@ public class LanguageModel extends Observable {
 
         EN("en");
 
-        private String value;
+        private final String value;
 
-        private Language(String s) {
+        Language(String s) {
             value = s;
         }
 

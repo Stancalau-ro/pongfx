@@ -1,8 +1,8 @@
 package ro.stancalau.pong.gui;
 
-public abstract class Modal extends Presentation {
+abstract class Modal extends Presentation {
 
-    protected ModalDialog dialog;
+    private ModalDialog dialog;
 
     public Modal(ScreensConfig config) {
         super(config);

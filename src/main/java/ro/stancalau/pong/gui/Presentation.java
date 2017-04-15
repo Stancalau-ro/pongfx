@@ -1,10 +1,10 @@
 package ro.stancalau.pong.gui;
 
-public abstract class Presentation {
+abstract class Presentation {
 
-    protected ScreensConfig config;
+    private final ScreensConfig config;
 
-    public Presentation(ScreensConfig config) {
+    Presentation(ScreensConfig config) {
         this.config = config;
     }
 }

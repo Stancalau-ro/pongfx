@@ -4,11 +4,11 @@ import ro.stancalau.pong.engine.IllegalBallPositionException;
 
 public class BallState {
 
-    public static final int DEFLECTING_SCALE = 3;
+    private static final int DEFLECTING_SCALE = 3;
 
-    private PlayGroundState playGround;
+    private final PlayGroundState playGround;
 
-    private double radius;
+    private final double radius;
     private double deltaX;
     private double deltaY;
     private double xPosition;
@@ -49,7 +49,7 @@ public class BallState {
         xPosition = getNormalizedPosition(width, radius, xPosition);
     }
 
-    private void normalizeYPosition(double height) throws IllegalBallPositionException {
+    private void normalizeYPosition(double height) {
         yPosition = getNormalizedPosition(height, radius, yPosition);
     }
 

@@ -14,24 +14,32 @@ import java.text.DecimalFormat;
 import java.util.Observable;
 import java.util.Observer;
 
-public class PlayGroundPresentation extends Presentation implements Observer {
+class PlayGroundPresentation extends Presentation implements Observer {
 
     public PlayGroundPresentation(ScreensConfig config) {
         super(config);
     }
 
-    Engine engine;
+    private Engine engine;
 
     @FXML
     StackPane root;
     @FXML
+    private
     Pane pane;
     @FXML
-    Label fpsLabel, fpsLabelMin, fpsLabelMax;
+    private
+    Label fpsLabel;
     @FXML
+    private
+    Label fpsLabelMin;
+    @FXML
+    private Label fpsLabelMax;
+    @FXML
+    private
     Button startButton;
 
-    DecimalFormat df = new DecimalFormat("##.#");
+    private final DecimalFormat df = new DecimalFormat("##.#");
 
     @FXML
     public void onPressStart(ActionEvent event) {
@@ -45,14 +53,11 @@ public class PlayGroundPresentation extends Presentation implements Observer {
     @FXML
     void initialize() {
         engine = new Engine(pane);
-        final Observer metricsObserver = new Observer() {
-            @Override
-            public void update(Observable o, Object arg) {
-                Metrics metrics = (Metrics) o;
-                fpsLabel.setText(df.format(metrics.getFps()));
-                fpsLabelMin.setText(df.format(metrics.getMinFps()));
-                fpsLabelMax.setText(df.format(metrics.getMaxFps()));
-            }
+        final Observer metricsObserver = (o, arg) -> {
+            Metrics metrics = (Metrics) o;
+            fpsLabel.setText(df.format(metrics.getFps()));
+            fpsLabelMin.setText(df.format(metrics.getMinFps()));
+            fpsLabelMax.setText(df.format(metrics.getMaxFps()));
         };
         engine.addMetricsObserver(metricsObserver);
         engine.addObserver(this);
@@ -68,14 +73,11 @@ public class PlayGroundPresentation extends Presentation implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                if (engine.isRunning())
-                    startButton.setText("stop");
-                else
-                    startButton.setText("start");
-            }
+        Platform.runLater(() -> {
+            if (engine.isRunning())
+                startButton.setText("stop");
+            else
+                startButton.setText("start");
         });
     }
 }

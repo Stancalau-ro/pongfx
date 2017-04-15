@@ -1,14 +1,11 @@
 package ro.stancalau.pong.gui;
 
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-import javafx.util.Callback;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.annotation.Bean;
@@ -53,16 +50,12 @@ public class ScreensConfig implements Observer {
         root = new StackPane();
         root.getStylesheets().add(Constants.STYLE_FILE);
         root.getStyleClass().add("main-window");
-        stage.setTitle("PongFX");
+        stage.setTitle("EasterPongFX");
         scene = new Scene(root, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
         stage.setScene(scene);
         stage.setResizable(false);
 
-        stage.setOnHiding(new EventHandler<WindowEvent>() {
-            public void handle(WindowEvent event) {
-                System.exit(0);
-            }
-        });
+        stage.setOnHiding(event -> System.exit(0));
         stage.show();
     }
 
@@ -88,17 +81,13 @@ public class ScreensConfig implements Observer {
 
     @Bean
     @Scope("prototype")
-    PlayGroundPresentation getPlayGroundPresentation() {
+    public PlayGroundPresentation getPlayGroundPresentation() {
         return new PlayGroundPresentation(this);
     }
 
     private Node getNode(final Presentation control, URL location) {
         FXMLLoader loader = new FXMLLoader(location, lang.getBundle());
-        loader.setControllerFactory(new Callback<Class<?>, Object>() {
-            public Object call(Class<?> aClass) {
-                return control;
-            }
-        });
+        loader.setControllerFactory(aClass -> control);
 
         try {
             return (Node) loader.load();

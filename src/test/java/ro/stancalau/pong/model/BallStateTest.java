@@ -16,18 +16,16 @@ public class BallStateTest {
     private static final double RADIUS = 10;
 
     private BallState state;
-    private PlayGroundState playGround;
-    private PadState pad;
 
     @Before
     public void setUp() throws Exception {
-        playGround = new PlayGroundState(WIDTH, HEIGHT);
-        pad = new PadState(PAD_WIDTH, PAD_HEIGHT);
+        PlayGroundState playGround = new PlayGroundState(WIDTH, HEIGHT);
+        PadState pad = new PadState(PAD_WIDTH, PAD_HEIGHT);
         state = new BallState(playGround, RADIUS);
     }
 
     @Test
-    public void testPositionBoundries() throws IllegalBallPositionException {
+    public void testPositionBounds() throws IllegalBallPositionException {
         PlayGroundState playGround = new PlayGroundState(WIDTH, HEIGHT);
         BallState state = new BallState(playGround, RADIUS);
         PadState fullWidthPad = new PadState(WIDTH, PAD_HEIGHT);

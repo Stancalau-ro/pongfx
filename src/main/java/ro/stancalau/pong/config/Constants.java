@@ -14,9 +14,9 @@ public class Constants {
     public static final int PAD_HEIGHT = 10;
     public static final int PAD_WIDTH = 150;
 
-    public static final String BALL_COLOR_1 = "#48BD31";
-    public static final String BALL_COLOR_2 = "#289D11";
+    public static final String BALL_COLOR_1 = "#CC0000";
+    public static final String BALL_COLOR_2 = "#DD0000";
 
-    public static final double SPEED = 600;
+    public static final double SPEED = 400;
 
 }

@@ -2,8 +2,8 @@ package ro.stancalau.pong.model;
 
 public class PadState {
 
-    private double width;
-    private double height;
+    private final double width;
+    private final double height;
     private double x;
 
     public PadState(double width, double height) {

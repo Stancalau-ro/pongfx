@@ -1,11 +1,11 @@
 package ro.stancalau.pong.gui;
 
-public class playGroundState {
+class PlayGroundState {
 
     private double width;
     private double height;
 
-    public playGroundState(double width, double height) {
+    public PlayGroundState(double width, double height) {
         this.width = width;
         this.height = height;
     }

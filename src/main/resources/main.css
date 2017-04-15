@@ -3,7 +3,7 @@
  -fx-background-color: #CAD2D7;
  -fx-background-position: left top, left 19px top 15px ;
  -fx-background-insets: 2,2,2,2;
- -fx-border-color: #48BD31;
+ -fx-border-color: #CC0000;
  -fx-border-width: 1;
 }
 
@@ -14,9 +14,9 @@
 }
 
 .button {
-    -fx-background-color: #48BD31;
+    -fx-background-color: #CC0000;
     -fx-background-insets: 1,1,1,1;
-    -fx-border-color: #48BD31;
+    -fx-border-color: #CC0000;
     -fx-border-width: 3;
     -fx-padding: 3;
     -fx-text-fill: #FFFFFF;

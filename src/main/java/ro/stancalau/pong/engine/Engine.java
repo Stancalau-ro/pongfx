@@ -1,38 +1,48 @@
 package ro.stancalau.pong.engine;
 
+import javafx.animation.RotateTransition;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+import javafx.scene.Group;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.RadialGradient;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import ro.stancalau.pong.config.Constants;
-import ro.stancalau.pong.model.*;
+import ro.stancalau.pong.model.BallState;
+import ro.stancalau.pong.model.MouseState;
+import ro.stancalau.pong.model.PadState;
+import ro.stancalau.pong.model.PlayGroundState;
 
 import java.util.Observable;
 import java.util.Observer;
 
+import static java.lang.System.currentTimeMillis;
+import static javafx.animation.Animation.INDEFINITE;
+
 public class Engine extends Observable implements Runnable {
 
     private static final Logger logger = LogManager.getLogger(Engine.class);
-    private static final double SECOND_IN_MILIS = 1000d;
+    private static final double SECOND_IN_MILLIS = 1000d;
     private static final String GRADIENT_STRING = String.format("radial-gradient(center 50%% 50%%, radius 100%%, %s, %s)", Constants.BALL_COLOR_1, Constants.BALL_COLOR_2);
 
-    private Circle ball;
+    private final int framerate = Constants.FPS;
+    private final double speed = Constants.SPEED;
+
+    private final BallState ballState;
+    private final MouseState mouseState;
+    private final PadState padState;
+    private final PlayGroundState playGroundState;
+    private final Metrics metrics;
+
+    private Group ball;
     private Rectangle pad;
-    private int framerate = Constants.FPS;
-    private double speed = Constants.SPEED;
     private boolean running = false;
-
-    private BallState ballState;
-    private MouseState mouseState;
-    private PadState padState;
-    private PlayGroundState playGroundState;
-
-    private Metrics metrics;
+    private RotateTransition rotateTransition;
 
     public Engine(Pane pane) {
         playGroundState = new PlayGroundState(Constants.PLAY_GROUND_WIDTH, Constants.PLAY_GROUND_HEIGHT);
@@ -48,13 +58,7 @@ public class Engine extends Observable implements Runnable {
     }
 
     private void bindPaneSizeProperties(final Pane pane) {
-        ChangeListener<Number> listener = new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> arg0,
-                                Number arg1, Number arg2) {
-                updateSizes(pane);
-            }
-        };
+        ChangeListener<Number> listener = (arg0, arg1, arg2) -> updateSizes(pane);
 
         pane.widthProperty().addListener(listener);
         pane.heightProperty().addListener(listener);
@@ -69,11 +73,21 @@ public class Engine extends Observable implements Runnable {
     }
 
     private void createBall(Pane pane, BallState state) {
-        ball = new Circle();
-        ball.setRadius(state.getRadius());
+        Image image = new Image("egg.png", true);
+        ImageView imageView = new ImageView(image);
 
-        RadialGradient g = RadialGradient.valueOf(GRADIENT_STRING);
-        ball.setFill(g);
+        imageView.setFitHeight(2 * ballState.getRadius());
+        imageView.setFitWidth(2 * ballState.getRadius());
+        imageView.setX(-ballState.getRadius());
+        imageView.setY(-ballState.getRadius());
+
+        rotateTransition = new RotateTransition(Duration.millis(2000), imageView);
+        rotateTransition.setByAngle(180f);
+        rotateTransition.setCycleCount(INDEFINITE);
+        rotateTransition.setAutoReverse(true);
+
+        ball = new Group();
+        ball.getChildren().add(imageView);
 
         pane.getChildren().add(ball);
         moveBall();
@@ -93,7 +107,7 @@ public class Engine extends Observable implements Runnable {
     @Override
     public void run() {
         setRunning(true);
-        long lastUpdateTime = System.currentTimeMillis();
+        long lastUpdateTime = currentTimeMillis();
 
         while (isRunning()) {
             double vector = getVector(lastUpdateTime);
@@ -101,11 +115,13 @@ public class Engine extends Observable implements Runnable {
             try {
                 ballState.updatePositions(padState, vector);
                 updateMetrics(lastUpdateTime);
-                lastUpdateTime = System.currentTimeMillis();
-                Thread.sleep((long) (SECOND_IN_MILIS / (double) framerate));
+                lastUpdateTime = currentTimeMillis();
+                rotateTransition.play();
+                Thread.sleep((long) (SECOND_IN_MILLIS / (double) framerate));
             } catch (IllegalBallPositionException e) {
                 stop();
                 ballState.reset();
+                rotateTransition.stop();
             } catch (InterruptedException e) {
                 logger.error("Could not sleep... maybe it's insomnia.", e);
             } finally {
@@ -116,40 +132,30 @@ public class Engine extends Observable implements Runnable {
     }
 
     private void updateMetrics(final long lastUpdateTime) {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                final double fps = 1 / ((double) System.currentTimeMillis() - lastUpdateTime) * SECOND_IN_MILIS;
-                metrics.setFps(Math.min(framerate, fps)); // minimum because the first cycle tends to give off huge unrealistic values
-            }
+        Platform.runLater(() -> {
+            final double fps = 1 / ((double) currentTimeMillis() - lastUpdateTime) * SECOND_IN_MILLIS;
+            metrics.setFps(Math.min(framerate, fps)); // minimum because the first cycle tends to give off huge unrealistic values
         });
     }
 
     private void moveBall() {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                ball.setCenterX(ballState.getXPosition());
-                ball.setCenterY(ballState.getYPosition());
-            }
+        Platform.runLater(() -> {
+            ball.setLayoutX(ballState.getXPosition());
+            ball.setLayoutY(ballState.getYPosition());
         });
     }
 
     private void movePad() {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                padState.updatePosition(mouseState.getCurrentDeltaX(), playGroundState.getWidth());
-                pad.setX(padState.getX());
-            }
+        Platform.runLater(() -> {
+            padState.updatePosition(mouseState.getCurrentDeltaX(), playGroundState.getWidth());
+            pad.setX(padState.getX());
         });
     }
 
     private double getVector(long lastUpdateTime) {
-        long sinceLastPositionUpdate = System.currentTimeMillis() - lastUpdateTime;
-        double hypotenuse = speed / SECOND_IN_MILIS * sinceLastPositionUpdate;
-        double cathetus = hypotenuse / Math.sqrt(Math.pow(ballState.getDeltaX(), 2) + Math.pow(ballState.getDeltaY(), 2));
-        return cathetus;
+        long sinceLastPositionUpdate = currentTimeMillis() - lastUpdateTime;
+        double hypotenuse = speed / SECOND_IN_MILLIS * sinceLastPositionUpdate;
+        return hypotenuse / Math.sqrt(Math.pow(ballState.getDeltaX(), 2) + Math.pow(ballState.getDeltaY(), 2));
     }
 
     private void setRunning(boolean running) {
